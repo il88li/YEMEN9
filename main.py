@@ -3,6 +3,12 @@ import requests
 import random
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from concurrent.futures import ThreadPoolExecutor
+from flask import Flask, request
+import threading
+import time
+
+# تهيئة Flask app للويب هووك
+app = Flask(__name__)
 
 # APIs
 SeedReam = "https://sii3.top/api/SeedReam-4.php"
@@ -26,10 +32,7 @@ def send_request(t, l=[]):
     """إرسال طلب إلى API SeedReam"""
     return requests.post(SeedReam, data={"text": t, "links": ",".join(l)}).json().get("image")
 
-def darkai():
-    """تشغيل البوت"""
-    T.polling()
-
+# معالجة الأوامر والرسائل
 @T.message_handler(commands=['start'])
 def start_cmd(m):
     """معالج أمر البدء"""
@@ -171,6 +174,58 @@ def handle_description(m):
         
         user_action.pop(uid, None)
 
-# تشغيل البوت
+# إعداد ويب هووك
+WEBHOOK_URL = "https://yemen9-1.onrender.com"
+WEBHOOK_PATH = "/webhook"
+
+@app.route(WEBHOOK_PATH, methods=['POST'])
+def webhook():
+    """معالجة الويب هووك"""
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        T.process_new_updates([update])
+        return ''
+    else:
+        return 'Invalid content type', 403
+
+@app.route('/')
+def index():
+    """الصفحة الرئيسية للحفاظ على تشغيل التطبيق"""
+    return "البوت يعمل بشكل طبيعي! 🚀"
+
+@app.route('/health')
+def health_check():
+    """فحص صحة التطبيق"""
+    return "OK", 200
+
+def set_webhook():
+    """تعيين الويب هووك"""
+    try:
+        T.remove_webhook()
+        time.sleep(1)
+        T.set_webhook(url=WEBHOOK_URL + WEBHOOK_PATH)
+        print(f"تم تعيين الويب هووك على: {WEBHOOK_URL + WEBHOOK_PATH}")
+    except Exception as e:
+        print(f"خطأ في تعيين الويب هووك: {e}")
+
+def keep_alive():
+    """إرسال طلبات دورية للحفاظ على التطبيق نشطاً"""
+    while True:
+        try:
+            requests.get(WEBHOOK_URL + '/health')
+            print("تم إرسال طلب للحفاظ على النشاط")
+        except Exception as e:
+            print(f"خطأ في إرسال طلب النشاط: {e}")
+        time.sleep(300)  # انتظر 5 دقائق بين كل طلب
+
 if __name__ == "__main__":
-    darkai()
+    # تعيين الويب هووك عند التشغيل
+    set_webhook()
+    
+    # بدء خيط للحفاظ على النشاط
+    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+    keep_alive_thread.start()
+    
+    # تشغيل تطبيق Flask
+    app.run(host='0.0.0.0', port=10000, debug=False)
