@@ -1,6 +1,7 @@
 import telebot
 import requests
 import random
+import json
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, request
@@ -12,7 +13,7 @@ app = Flask(__name__)
 
 # APIs
 SeedReam = "https://sii3.top/api/SeedReam-4.php"
-PromptAPI = "https://sii3.top/api/prompt-img.php?text="  # تم التصحيح إلى sii3 بدلاً من si13
+PromptAPI = "https://sii3.top/api/prompt-img.php?text="
 
 # Token البوت
 T = telebot.TeleBot("7863334400:AAHCp4jO-pd2qqGQKqxLF1GGHh4w-0zPhqQ")
@@ -38,7 +39,17 @@ def generate_prompt(text):
         # استخدام API لإنشاء البرومبت مع التعامل مع الأخطاء
         response = requests.get(f"{PromptAPI}{requests.utils.quote(text)}", timeout=10)
         if response.status_code == 200 and response.text.strip():
-            return response.text.strip()
+            # محاولة تحليل الاستجابة كـ JSON
+            try:
+                data = json.loads(response.text)
+                # استخراج النص من حقل response فقط
+                if "response" in data:
+                    return data["response"].strip()
+                else:
+                    return response.text.strip()
+            except:
+                # إذا لم تكن JSON، نستخدم النص كما هو
+                return response.text.strip()
         else:
             # إنشاء وصف بديل إذا فشل API
             return f"صورة عالية الجودة ودقيقة لل: {text}. تفاصيل واقعية، ألوان زاهية، إضاءة احترافية، دقة 4K."
@@ -208,8 +219,8 @@ def handle_description(m):
         # إنشاء البرومبت باستخدام الذكاء الاصطناعي
         generated_prompt = generate_prompt(prompt_text)
         
-        # إرسال البرومبت فقط بدون أي نص إضافي
-        T.send_message(uid, generated_prompt)
+        # إرسال البرومبت فقط بشكل ماركداون
+        T.send_message(uid, f"```\n{generated_prompt}\n```", parse_mode="Markdown")
         
         try:
             T.delete_message(uid, wait_st.message_id)
