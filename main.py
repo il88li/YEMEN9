@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # APIs
 SeedReam = "https://sii3.top/api/SeedReam-4.php"
-PromptAPI = "https://sii3.top/api/prompt-img.php?text="
+PromptAPI = "https://sii3.top/api/prompt-img.php?text="  # تم التصحيح إلى sii3 بدلاً من si13
 
 # Token البوت
 T = telebot.TeleBot("7863334400:AAHCp4jO-pd2qqGQKqxLF1GGHh4w-0zPhqQ")
@@ -35,14 +35,16 @@ def send_request(t, l=[]):
 def generate_prompt(text):
     """إنشاء برومبت باستخدام الذكاء الاصطناعي"""
     try:
-        # استخدام API لإنشاء البرومبت
-        response = requests.get(f"https://si13.top/api/prompt-img.php?text={requests.utils.quote(text)}")
-        if response.status_code == 200:
-            return response.text
+        # استخدام API لإنشاء البرومبت مع التعامل مع الأخطاء
+        response = requests.get(f"{PromptAPI}{requests.utils.quote(text)}", timeout=10)
+        if response.status_code == 200 and response.text.strip():
+            return response.text.strip()
         else:
-            return f"# البرومبت المُنشئ:\n\n**الفكرة الأصلية:** {text}\n\n**الوصف المُفصل:**\nتم إنشاء وصف مفصل للصورة بناءً على طلبك. يمكنك استخدام هذا النص لتوليد الصور باستخدام الذكاء الاصطناعي."
+            # إنشاء وصف بديل إذا فشل API
+            return f"صورة عالية الجودة ودقيقة لل: {text}. تفاصيل واقعية، ألوان زاهية، إضاءة احترافية، دقة 4K."
     except Exception as e:
-        return f"# البرومبت المُنشئ:\n\n**الفكرة الأصلية:** {text}\n\n**الوصف المُفصل:**\nحدث خطأ في إنشاء البرومبت: {str(e)}"
+        # إنشاء وصف بديل في حالة الخطأ
+        return f"صورة عالية الجودة ودقيقة لل: {text}. تفاصيل واقعية، ألوان زاهية، إضاءة احترافية، دقة 4K."
 
 # معالجة الأوامر والرسائل
 @T.message_handler(commands=['start'])
@@ -206,12 +208,8 @@ def handle_description(m):
         # إنشاء البرومبت باستخدام الذكاء الاصطناعي
         generated_prompt = generate_prompt(prompt_text)
         
-        # إرسال البرومبت كنص ماركداون
-        try:
-            T.send_message(uid, f"```markdown\n{generated_prompt}\n```", parse_mode="Markdown")
-        except:
-            # إذا فشل إرسال ماركداون، نرسله كنص عادي
-            T.send_message(uid, generated_prompt)
+        # إرسال البرومبت فقط بدون أي نص إضافي
+        T.send_message(uid, generated_prompt)
         
         try:
             T.delete_message(uid, wait_st.message_id)
@@ -280,4 +278,3 @@ if __name__ == "__main__":
     
     # تشغيل تطبيق Flask
     app.run(host='0.0.0.0', port=10000, debug=False)
-
