@@ -1,4 +1,4 @@
-import telebot
+                import telebot
 import requests
 import random
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
@@ -32,6 +32,18 @@ def send_request(t, l=[]):
     """إرسال طلب إلى API SeedReam"""
     return requests.post(SeedReam, data={"text": t, "links": ",".join(l)}).json().get("image")
 
+def generate_prompt(text):
+    """إنشاء برومبت باستخدام الذكاء الاصطناعي"""
+    try:
+        # استخدام API لإنشاء البرومبت
+        response = requests.get(f"https://si13.top/api/prompt-img.php?text={requests.utils.quote(text)}")
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"# البرومبت المُنشئ:\n\n**الفكرة الأصلية:** {text}\n\n**الوصف المُفصل:**\nتم إنشاء وصف مفصل للصورة بناءً على طلبك. يمكنك استخدام هذا النص لتوليد الصور باستخدام الذكاء الاصطناعي."
+    except Exception as e:
+        return f"# البرومبت المُنشئ:\n\n**الفكرة الأصلية:** {text}\n\n**الوصف المُفصل:**\nحدث خطأ في إنشاء البرومبت: {str(e)}"
+
 # معالجة الأوامر والرسائل
 @T.message_handler(commands=['start'])
 def start_cmd(m):
@@ -52,10 +64,24 @@ def our_services(c):
     markup.add(
         InlineKeyboardButton(f"إنشاء صورة {emoji1}", callback_data="create_img"),
         InlineKeyboardButton(f"تعديل صورة {emoji2}", callback_data="edit_img"),
-        InlineKeyboardButton(f"إنشاء برومبت {emoji3}", callback_data="create_prompt")
+        InlineKeyboardButton(f"إنشاء برومبت {emoji3}", callback_data="create_prompt"),
+        InlineKeyboardButton("رجوع 🔙", callback_data="back_to_main")
     )
     try:
         T.edit_message_text("اختر الخدمة التي تريدها:", c.message.chat.id, c.message.message_id, reply_markup=markup)
+    except:
+        pass
+
+@T.callback_query_handler(func=lambda c: c.data == "back_to_main")
+def back_to_main(c):
+    """العودة إلى القائمة الرئيسية"""
+    uid = c.from_user.id
+    markup = InlineKeyboardMarkup(row_width=1)
+    emoji = get_random_emoji()
+    markup.add(InlineKeyboardButton(f"خدماتنا {emoji}", callback_data="our_services"))
+    try:
+        T.edit_message_text("أهلاً! أنا SeedReam 4.0 الذكاء الاصطناعي الخاص بك لإنشاء وتعديل الصور 🫧", 
+                           c.message.chat.id, c.message.message_id, reply_markup=markup)
     except:
         pass
 
@@ -69,14 +95,20 @@ def action_select(c):
         text = "أرسل الصورة (الحد الأقصى 4)"
     else:  # create_prompt
         text = "أرسل النص لإنشاء البرومبت"
+    
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("رجوع 🔙", callback_data="back_to_services"))
+    
     try:
-        T.edit_message_text(text, c.message.chat.id, c.message.message_id)
+        T.edit_message_text(text, c.message.chat.id, c.message.message_id, reply_markup=markup)
     except:
         pass
-    try:
-        T.edit_message_reply_markup(c.message.chat.id, c.message.message_id, reply_markup=None)
-    except:
-        pass
+
+@T.callback_query_handler(func=lambda c: c.data == "back_to_services")
+def back_to_services(c):
+    """العودة إلى قائمة الخدمات"""
+    user_action.pop(c.from_user.id, None)
+    our_services(c)
 
 @T.message_handler(content_types=['photo'])
 def handle_photos(m):
@@ -88,7 +120,9 @@ def handle_photos(m):
     if len(user_photos[uid]) > 4:
         user_photos[uid] = user_photos[uid][:4]
     if len(user_photos[uid]) == 1:
-        T.send_message(uid, "أرسل وصف التعديل")
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton("رجوع 🔙", callback_data="back_to_services"))
+        T.send_message(uid, "أرسل وصف التعديل", reply_markup=markup)
 
 @T.message_handler(func=lambda m: True)
 def handle_description(m):
@@ -126,6 +160,11 @@ def handle_description(m):
         user_photos[uid] = []
         user_action.pop(uid, None)
         
+        # إظهار زر العودة بعد الانتهاء
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton("العودة للخدمات 🔙", callback_data="our_services"))
+        T.send_message(uid, "تم الانتهاء من التعديل! 🎉", reply_markup=markup)
+        
     elif action == "create_img":
         # معالجة إنشاء الصورة
         wait_st = T.send_sticker(uid, "CAACAgIAAxkBAAIMcmjDndyMvCb2OBQhIGobGVZU4f6JAAK0IwACmEspSN65vs0qW-TZNgQ")
@@ -154,18 +193,25 @@ def handle_description(m):
         
         user_action.pop(uid, None)
         
+        # إظهار زر العودة بعد الانتهاء
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton("العودة للخدمات 🔙", callback_data="our_services"))
+        T.send_message(uid, "تم الانتهاء من الإنشاء! 🎉", reply_markup=markup)
+        
     elif action == "create_prompt":
         # معالجة إنشاء البرومبت
         wait_st = T.send_sticker(uid, "CAACAgIAAxkBAAIMcmjDndyMvCb2OBQhIGobGVZU4f6JAAK0IwACmEspSN65vs0qW-TZNgQ")
         prompt_text = m.text
         
-        # استخدام API إنشاء البرومبت
-        image_url = PromptAPI + requests.utils.quote(prompt_text)
+        # إنشاء البرومبت باستخدام الذكاء الاصطناعي
+        generated_prompt = generate_prompt(prompt_text)
         
+        # إرسال البرومبت كنص ماركداون
         try:
-            T.send_photo(uid, image_url, caption=f"<b><blockquote>{prompt_text}</blockquote></b>", parse_mode="HTML")
-        except Exception as e:
-            T.send_message(uid, f"حدث خطأ أثناء إنشاء الصورة: {str(e)}")
+            T.send_message(uid, f"```markdown\n{generated_prompt}\n```", parse_mode="Markdown")
+        except:
+            # إذا فشل إرسال ماركداون، نرسله كنص عادي
+            T.send_message(uid, generated_prompt)
         
         try:
             T.delete_message(uid, wait_st.message_id)
@@ -173,6 +219,11 @@ def handle_description(m):
             pass
         
         user_action.pop(uid, None)
+        
+        # إظهار زر العودة بعد الانتهاء
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton("العودة للخدمات 🔙", callback_data="our_services"))
+        T.send_message(uid, "تم إنشاء البرومبت بنجاح! 🎉", reply_markup=markup)
 
 # إعداد ويب هووك
 WEBHOOK_URL = "https://yemen9-1.onrender.com"
@@ -213,7 +264,7 @@ def keep_alive():
     """إرسال طلبات دورية للحفاظ على التطبيق نشطاً"""
     while True:
         try:
-            requests.get(WEBHOOK_URL + '/health')
+            requests.get(WEBHOOK_URL)
             print("تم إرسال طلب للحفاظ على النشاط")
         except Exception as e:
             print(f"خطأ في إرسال طلب النشاط: {e}")
