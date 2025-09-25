@@ -1,4 +1,4 @@
-                import telebot
+import telebot
 import requests
 import random
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
@@ -280,3 +280,4 @@ if __name__ == "__main__":
     
     # تشغيل تطبيق Flask
     app.run(host='0.0.0.0', port=10000, debug=False)
+
