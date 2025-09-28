@@ -21,7 +21,7 @@ PromptAPI = "https://sii3.top/api/prompt-img.php?text="
 AzkarAPI = "https://sii3.top/api/azkar.php"
 
 # Token البوت
-T = telebot.TeleBot("8052900952:AAEvZKao98ibPDlUqxBVcj6In1YOa4cbW18")
+T = telebot.TeleBot("7863334400:AAHCp4jO-pd2qqGQKqxLF1GGHh4w-0zPhqQ")
 
 # قناة الاشتراك الإجباري
 REQUIRED_CHANNEL = "@iIl337"
