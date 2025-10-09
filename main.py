@@ -18,7 +18,7 @@ DEEPSEEK_R1_API = "https://sii3.top/api/deepseek.php?r1="
 SeedReam = "https://sii3.top/api/SeedReam-4.php"
 
 # Token البوت
-BOT_TOKEN = "8293003270:AAGf2GQvucNgi5fLbgBSpPHr-iKmMUp7l9U"
+BOT_TOKEN = "8228285723:AAEp2C1DO3Iju-uP6WWWrXbyQx9IaNQYAVY"
 
 T = telebot.TeleBot(BOT_TOKEN)
 
