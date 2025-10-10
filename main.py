@@ -16,7 +16,7 @@ SeedReam = "https://sii3.top/api/SeedReam-4.php"
 DeepSeek_API = "https://sii3.top/api/deepseek.php"
 
 # Token البوت
-T = telebot.TeleBot("7863334400:AAHDS2IuKno0tmU4tAQZ1E5avGDQlQe3o0g")
+T = telebot.TeleBot("7863334400:AAHIntQYxaMyvg1zWmRKcW2avPmKE2qaPP8")
 
 # تخزين المستخدمين
 user_photos = {}
